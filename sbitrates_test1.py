@@ -22,10 +22,11 @@ def determine_thresh(data, thresh):
     return (data.iloc[val1].THR_ARM_DAC)
 
 outfilename = args.outfilename
+df2=df.groupby(["OH", "vfat", "THR_ARM_DAC"]).SBit_Rate.mean().reset_index()
 with open(outfilename,"w+") as file:
      file.write("OH/I:vfatN/I:threshold/I\n")      
-     for OH in df.OH.unique():
-         sel=df.OH==OH
+     for OH in df2.OH.unique():
+         sel=df2.OH==OH
          dataOH=df[sel]
          for vfat in dataOH.vfat.unique():
              sel2=dataOH.vfat==vfat
@@ -35,26 +36,26 @@ with open(outfilename,"w+") as file:
              file.write("%i:%i:%i\n"%(OH,vfat,threshold))
             
 if args.plotsbit=="avg":
-    df2=df.groupby(["OH", "vfat", "THR_ARM_DAC"]).SBit_Rate.mean().reset_index()
-    with open("sbitrates_avg.txt","w+") as file:
-        file.write("OH/I:vfatN/I:threshold/I\n")
-        for OH in df2.OH.unique():
-            sel=df2.OH==OH
-            dataOH=df2[sel]
-            for vfat in dataOH.vfat.unique():
-                sel2=dataOH.vfat==vfat
-                plt.ioff()
-                plt.figure()
-                datavfat=dataOH[sel2].reset_index()
-                plt.semilogy(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, '.')
-                threshold=determine_thresh(datavfat,100)
-                file.write("%i:%i:%i\n"%(OH,vfat,threshold))
-                plt.ylim(1,100000000)
-                plt.xlabel('THR_ARM_DAC')
-                plt.ylabel('S-Bit rate [Hz]')
-                plt.text(150, 1000000,'OH %i, VFAT %i'%(OH,vfat), ha='center', va='center')
-                plt.savefig("Sbitrate_avg_OH%i_VFAT%i.png"%(OH,vfat))
-                plt.close()
+#    df2=df.groupby(["OH", "vfat", "THR_ARM_DAC"]).SBit_Rate.mean().reset_index()
+#    with open("sbitrates_avg.txt","w+") as file:
+#        file.write("OH/I:vfatN/I:threshold/I\n")
+    for OH in df2.OH.unique():
+        sel=df2.OH==OH
+        dataOH=df2[sel]
+        for vfat in dataOH.vfat.unique():
+            sel2=dataOH.vfat==vfat
+            plt.ioff()
+            plt.figure()
+            datavfat=dataOH[sel2].reset_index()
+            plt.semilogy(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, '.')
+            threshold=determine_thresh(datavfat,100)
+#            file.write("%i:%i:%i\n"%(OH,vfat,threshold))
+            plt.ylim(1,100000000)
+            plt.xlabel('THR_ARM_DAC')
+            plt.ylabel('S-Bit rate [Hz]')
+            plt.text(150, 1000000,'OH %i, VFAT %i'%(OH,vfat), ha='center', va='center')
+            plt.savefig("Sbitrate_avg_OH%i_VFAT%i.png"%(OH,vfat))
+            plt.close()
 if args.plotsbit=="all":
     with open("sbitrates_avg.txt","w+") as file:
         file.write("OH/I:vfatN/I:threshold/I\n")
