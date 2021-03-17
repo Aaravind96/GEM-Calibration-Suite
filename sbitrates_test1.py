@@ -8,6 +8,9 @@ parser.add_argument('-t','--thresholdin', type=int, default=100, help="Noise thr
 parser.add_argument('-o','--outfilename', type=str, default="SBitRates.txt", help="Filename to which analyzed data is written")
 args = parser.parse_args()
 
+import time
+start=time.time()
+
 import numpy as np
 from scipy.optimize import curve_fit
 import pandas as pd
@@ -76,3 +79,4 @@ if args.plotsbit=="all":
                 plt.text(150, 1000000,'OH %i, VFAT %i'%(OH,vfat), ha='center', va='center')
                 plt.savefig("Sbitrate_OH%i_VFAT%i.png"%(OH,vfat))
                 plt.close()
+print("--- %s seconds ---" % (time.time() - start))
