@@ -2,7 +2,7 @@ import argparse
 #from pathlib import Path
 
 parser = argparse.ArgumentParser(description='Arguments to supply to sbitrates_1.py')
-parser.add_argument("infilename", type=str, help="Filename from which input data is contained")
+parser.add_argument("infilename", type=str, nargs='+', help="Filename from which input data is contained")
 parser.add_argument('-p','--plotsbit', type=str, default="n", help="Argument to pick an option for plotting the sbit-rates vs THR_ARM_DAC. -p all: Plots for each VFAT are generated and saved. -p avg: Plots generated after averaging sbitrates for each VFAT, OH. Default: No plotting")
 parser.add_argument('-t','--thresholdin', type=int, default=100, help="Noise threshold")
 parser.add_argument('-o','--outfilename', type=str, default="SBitRates.txt", help="Filename to which analyzed data is written")
@@ -18,7 +18,14 @@ import matplotlib.pyplot as plt
 
 infilename=args.infilename
 #fnames=Path(infilename).match("*/Scan_iteration*.txt")
-df = pd.read_csv(infilename,names=["OH", "vfat", "THR_ARM_DAC","SBit_Rate"], sep=";")
+dfs = []
+iter=1
+for fname in infilename:
+    df = pd.read_csv(fname,names=["OH", "vfat", "THR_ARM_DAC","SBit_Rate"], sep=";")  
+    df["iter"]=iter
+    dfs.append(df)
+    iter=iter+1
+df = pd.concat(dfs)
 
 def determine_thresh(data, thresh):
     val1=abs(data['SBit_Rate']-thresh).idxmin()
