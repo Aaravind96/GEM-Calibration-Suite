@@ -46,9 +46,7 @@ with open(outfilename,"w+") as file:
              file.write("%i:%i:%i\n"%(OH,vfat,threshold))
             
 if args.plotsbit=="avg":
-#    df2=df.groupby(["OH", "vfat", "THR_ARM_DAC"]).SBit_Rate.mean().reset_index()
-#    with open("sbitrates_avg.txt","w+") as file:
-#        file.write("OH/I:vfatN/I:threshold/I\n")
+    n=0
     for OH in df2.OH.unique():
         sel=df2.OH==OH
         dataOH=df2[sel]
@@ -59,7 +57,6 @@ if args.plotsbit=="avg":
             datavfat=dataOH[sel2].reset_index()
             plt.semilogy(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, '.')
             threshold=determine_thresh(datavfat,100)
-#            file.write("%i:%i:%i\n"%(OH,vfat,threshold))
             plt.ylim(1,100000000)
             plt.xlabel('THR_ARM_DAC')
             plt.ylabel('S-Bit rate [Hz]')
