@@ -10,39 +10,30 @@ def determine_thresh(data, thresh):
     val1=abs(data['SBit_Rate']-thresh).idxmin()
     return (data.iloc[val1].THR_ARM_DAC)
 
-def plot_avg(dataOH, vfat, n):
-    sel2=dataOH.vfat==vfat      
-    datavfat=dataOH[sel2].reset_index()
-    if n==0:
-       curve, =ax.plot(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, 'o')
-       textcurve=ax.text(150, 1000000,'OH %i, VFAT %i'%(OH,vfat), ha='center', va='center')
-       plt.savefig("Sbitrate_a_OH%i_VFAT%i.png"%(OH,vfat))
-       n+=1
-    else:
-       curve.set_xdata(datavfat.THR_ARM_DAC)
-       curve.set_ydata(datavfat.SBit_Rate)
-       ax.draw_artist(curve)
-       textcurve.set_text('OH %i, VFAT %i'%(OH,vfat))
-       plt.savefig("Sbitrate_OH%i_VFAT%i.png"%(OH,vfat)) 
-    
-def plot_all(dataOH, vfat, n):
-    sel2=dataOH.vfat==vfat      
-    datavfat=dataOH[sel2].reset_index()
-    threshold=determine_thresh(datavfat,100)
-    file.write("%i:%i:%i:%i\n"%(iter,OH,vfat,threshold))    
-    if n==0:
-       curve, =ax.plot(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, 'o')
-       textcurve=ax.text(150, 1000000,'Iter %i, OH %i, VFAT %i'%(iter,OH,vfat), ha='center', va='center')
-       plt.savefig("Sbitrate_i%i_OH%i_VFAT%i.png"%(iter,OH,vfat))
-       n+=1
-    else:
-       curve.set_xdata(datavfat.THR_ARM_DAC)
-       curve.set_ydata(datavfat.SBit_Rate)
-       ax.draw_artist(curve)
-       textcurve.set_text('Iter %i, OH %i, VFAT %i'%(iter,OH,vfat))
-       plt.savefig("Sbitrate_i%i_OH%i_VFAT%i.png"%(iter,OH,vfat))  
-
-
+def plot_avg(df2, OH):
+    sel=df2.OH==OH
+    dataOH=df2[sel]    
+    fig, ax = plt.subplots()
+    ax.set_ylim(1,100000000)
+    ax.set_xlabel('THR_ARM_DAC')
+    ax.set_ylabel('S-Bit rate [Hz]')
+    ax.set_yscale("log")
+    n=0
+    for vfat in dataOH.vfat.unique():        
+        sel2=dataOH.vfat==vfat      
+        datavfat=dataOH[sel2].reset_index()
+        if n==0:
+           curve, =ax.plot(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, 'o')
+           textcurve=ax.text(150, 1000000,'OH %i, VFAT %i'%(OH,vfat), ha='center', va='center')
+           plt.savefig("Sbitrate_OH%i_VFAT%i.png"%(OH,vfat))
+           n+=1
+        else:
+           curve.set_xdata(datavfat.THR_ARM_DAC)
+           curve.set_ydata(datavfat.SBit_Rate)
+           ax.draw_artist(curve)
+           textcurve.set_text('OH %i, VFAT %i'%(OH,vfat))
+           plt.savefig("Sbitrate_OH%i_VFAT%i.png"%(OH,vfat))      
+        
 start=time.time()
 parser = argparse.ArgumentParser(description='Arguments to supply to sbitrates_1.py')
 parser.add_argument("infilename", type=str, nargs='+', help="Filename from which input data is contained")
@@ -67,7 +58,7 @@ with open(outfilename,"w+") as file:
      file.write("OH/I:vfatN/I:threshold/I\n")      
      for OH in df2.OH.unique():
          sel=df2.OH==OH
-         dataOH=df[sel]
+         dataOH=df2[sel]
          for vfat in dataOH.vfat.unique():
              sel2=dataOH.vfat==vfat
              datavfat=dataOH[sel2].reset_index()
@@ -75,22 +66,13 @@ with open(outfilename,"w+") as file:
              threshold=determine_thresh(datavfat,thr)
              file.write("%i:%i:%i\n"%(OH,vfat,threshold))
          
-if args.plotsbit=="avg":
-   
-   fig, ax = plt.subplots()
-   ax.set_ylim(1,100000000)
-   ax.set_xlabel('THR_ARM_DAC')
-   ax.set_ylabel('S-Bit rate [Hz]')
-   ax.set_yscale("log")
-   n=0
-
-   for OH in df2.OH.unique():
-       sel=df2.OH==OH
-       dataOH=df2[sel]
-       pro= [Process(target=plot_avg, args=(dataOH, vfat, n)) for vfat in dataOH.vfat.unique()]
-       for p in pro:
-           p.start()                                
-                                
+if args.plotsbit=="avg":          
+   pro= [Process(target=plot_avg, args=(df2, OH)) for OH in df2.OH.unique()]
+   for p in pro:
+       p.start()
+   for p in pro:
+       p.join()
+    
 if args.plotsbit=="all":
     df1=df
     for iter in df1.iter.unique():
@@ -107,8 +89,20 @@ if args.plotsbit=="all":
             for OH in df.OH.unique():
                 sel=df.OH==OH
                 dataOH=df[sel]
-                pro= [Process(target=plot_all, args=(dataOH, vfat, n)) for vfat in dataOH.vfat.unique()]
-                for p in pro:
-                    p.start() 
+                for vfat in dataOH.vfat.unique():
+                    sel2=dataOH.vfat==vfat      
+                    datavfat=dataOH[sel2].reset_index()
+                    threshold=determine_thresh(datavfat,100)
+                    file.write("%i:%i:%i:%i\n"%(iter,OH,vfat,threshold))    
+                    if n==0:
+                       curve, =ax.plot(datavfat.THR_ARM_DAC, datavfat.SBit_Rate, 'o')
+                       textcurve=ax.text(150, 1000000,'Iter %i, OH %i, VFAT %i'%(iter,OH,vfat), ha='center', va='center')
+                       plt.savefig("Sbitrate_i%i_OH%i_VFAT%i.png"%(iter,OH,vfat))
+                       n+=1
+                    else:
+                       curve.set_xdata(datavfat.THR_ARM_DAC)
+                       curve.set_ydata(datavfat.SBit_Rate)
+                       ax.draw_artist(curve)
+                       textcurve.set_text('Iter %i, OH %i, VFAT %i'%(iter,OH,vfat))
+                       plt.savefig("Sbitrate_i%i_OH%i_VFAT%i.png"%(iter,OH,vfat))                    
 
-print("- %s s -" % (time.time() - start))
